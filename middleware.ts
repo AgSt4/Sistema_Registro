@@ -11,14 +11,6 @@ export async function middleware(request: NextRequest) {
     return isPublicRoute ? response : NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const hasSessionCookies = request.cookies
-    .getAll()
-    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
-
-  if (!isPublicRoute && !hasSessionCookies) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
   return response;
 }
 

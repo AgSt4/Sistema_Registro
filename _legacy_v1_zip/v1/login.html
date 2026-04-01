@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar — Sistema de Formación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F6F4EF;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: #2D5A3D;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .logo-icon svg { width: 28px; height: 28px; fill: #fff; }
+
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      color: #1A1916;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #6B6860;
+      font-size: 14px;
+      margin-bottom: 36px;
+      line-height: 1.5;
+    }
+
+    .btn-google {
+      width: 100%;
+      padding: 13px 20px;
+      background: #fff;
+      border: 1.5px solid #D1CFC9;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1A1916;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .btn-google:hover {
+      border-color: #2D5A3D;
+      box-shadow: 0 0 0 3px rgba(45,90,61,.08);
+    }
+
+    .btn-google:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+    .error-box {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #B91C1C;
+      margin-top: 16px;
+      text-align: left;
+    }
+
+    .footer-note {
+      margin-top: 32px;
+      font-size: 12px;
+      color: #9B9890;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <h1>Sistema de Formación</h1>
+    <p class="subtitle">Ingresa con tu cuenta de Gmail institucional para acceder al panel.</p>
+
+    <button class="btn-google" id="btnGoogle" onclick="loginGoogle()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Ingresar con Google
+    </button>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <p class="footer-note">Solo cuentas autorizadas por el administrador pueden acceder.</p>
+  </div>
+
+  <script>
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Si ya hay sesión activa, redirigir a app
+    db.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        window.location.href = 'app.html';
+      }
+    });
+
+    // Capturar error de URL (ej: cuenta no autorizada)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      showError(decodeURIComponent(params.get('error')));
+    }
+
+    async function loginGoogle() {
+      const btn = document.getElementById('btnGoogle');
+      btn.disabled = true;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" stroke="#ccc" stroke-width="3" fill="none"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#2D5A3D" stroke-width="3" fill="none" stroke-linecap="round"/></svg> Redirigiendo...';
+
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/app.html' }
+      });
+
+      if (error) {
+        showError('Error al conectar con Google: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20">...</svg> Ingresar con Google';
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorBox');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+  </script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</body>
+</html>

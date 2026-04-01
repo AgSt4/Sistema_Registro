@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { SectionCard } from "@/components/cards";
 import { SignInButton } from "@/components/auth-button";
+import { LoginSessionGate } from "@/components/login-session-gate";
 import { getAuthState } from "@/lib/auth";
 
 export default async function LoginPage() {
@@ -16,6 +17,7 @@ export default async function LoginPage() {
 
   return (
     <main className="grain flex min-h-screen items-center justify-center px-6 py-12">
+      <LoginSessionGate />
       <section className="w-full max-w-xl rounded-[36px] border border-brand-ink/10 bg-white/92 p-8 shadow-card lg:p-10">
         <p className="text-sm uppercase tracking-[0.28em] text-brand-wine">Acceso</p>
         <h1 className="mt-4 font-serif text-4xl font-semibold leading-tight text-brand-ink lg:text-5xl">
