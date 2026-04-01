@@ -55,7 +55,7 @@ export default async function LoginPage() {
               <strong>{auth.isConfigured ? "Supabase detectado" : "faltan variables de entorno"}</strong>
             </p>
             <p>
-              Estado de sesión: <strong>{auth.user ? `conectado como ${auth.user.email}` : "sin sesión"}</strong>
+              Estado de sesión: <strong>{auth.user ? `conectado como ${auth.user?.email ?? ""}` : "sin sesión"}</strong>
             </p>
             {auth.isConfigured ? <SignInButton /> : null}
             {!auth.isConfigured ? (
@@ -73,3 +73,4 @@ export default async function LoginPage() {
     </AppShell>
   );
 }
+
