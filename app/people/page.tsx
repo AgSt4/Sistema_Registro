@@ -78,8 +78,8 @@ export default async function PeoplePage() {
                       </Badge>
                     </td>
                     <td className="px-3 py-4">
-                      {/* Le decimos a TypeScript que trate el dato como 'any' para evitar que asuma que es un Array */}
-                      {(person.profiles as any)?.full_name ?? "Sin asignar"}
+                      {/* Solución 100% legal para TypeScript sin usar 'any' */}
+                      {(person.profiles as { full_name?: string } | null)?.full_name ?? "Sin asignar"}
                     </td>
                     <td className="px-3 py-4">{person.institution_name ?? "-"}</td>
                   </tr>
