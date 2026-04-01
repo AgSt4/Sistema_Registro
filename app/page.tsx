@@ -49,7 +49,7 @@ export default async function HomePage() {
     .limit(4);
 
   return (
-    <AppShell eyebrow="Centro Operativo" title="Una sola capa de operación para personas, formación, donaciones y activación institucional.">
+    <AppShell eyebrow="Centro Operativo" title="Dashboard.">
       
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
