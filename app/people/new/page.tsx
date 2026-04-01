@@ -8,7 +8,7 @@ export default function NewPersonPage() {
   // Esta función "Server Action" se ejecuta de forma segura en el servidor
   async function createPerson(formData: FormData) {
     "use server";
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // 1. Recolectamos lo que el usuario escribió en el formulario
     const rawData = {
