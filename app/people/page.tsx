@@ -4,10 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
 export default async function PeoplePage() {
-  // 1. Agregamos el await que faltaba
   const supabase = await createClient();
 
-  // 2. Agregamos el seguro para TypeScript
   if (!supabase) {
     return (
       <AppShell eyebrow="CRM" title="Directorio central de personas">
@@ -16,7 +14,6 @@ export default async function PeoplePage() {
     );
   }
 
-  // 3. Hacemos la consulta SQL real a tu tabla 'people'.
   const { data: people, error } = await supabase
     .from("people")
     .select(`
@@ -35,7 +32,6 @@ export default async function PeoplePage() {
     console.error("Error al cargar personas desde Supabase:", error.message);
   }
 
-  // Si la tabla está vacía o hay error, evitamos que la página se rompa
   const peopleList = people || [];
 
   return (
@@ -82,8 +78,8 @@ export default async function PeoplePage() {
                       </Badge>
                     </td>
                     <td className="px-3 py-4">
-                      {/* Supabase devuelve el objeto anidado al hacer el join */}
-                      {person.profiles?.full_name ?? "Sin asignar"}
+                      {/* Le decimos a TypeScript que trate el dato como 'any' para evitar que asuma que es un Array */}
+                      {(person.profiles as any)?.full_name ?? "Sin asignar"}
                     </td>
                     <td className="px-3 py-4">{person.institution_name ?? "-"}</td>
                   </tr>
