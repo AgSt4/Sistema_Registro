@@ -1,0 +1,77 @@
+# =======================================================
+# .gitignore - Ideapaís Disaster Recovery Archive
+# =======================================================
+
+# ----------------------
+# 1. SEGURIDAD Y SECRETOS (CRÍTICO)
+# ----------------------
+.env
+.env.local
+.env.*
+*.key
+*.pem
+secrets.yaml
+creds.json
+credentials.json
+token.json
+oauth_token.txt
+client_secret_*.json
+
+# Archivos de configuración locales que pueden tener contraseñas
+config_local.py
+settings_private.py
+
+# ----------------------
+# 2. PYTHON (Para el Bot de WhatsApp)
+# ----------------------
+# Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos Virtuales (NUNCA subir esto)
+venv/
+env/
+.venv/
+.env/
+
+# Logs y bases de datos locales de python
+*.log
+*.sqlite
+*.db
+
+# ----------------------
+# 3. GOOGLE APPS SCRIPT / CLASP
+# ----------------------
+# Si usaste CLASP para bajar el código, ignora las credenciales de login
+.clasprc.json
+.clasp-login.json
+
+# (Opcional) Si quieres ignorar la vinculación con el script en vivo para evitar sobreescrituras accidentales
+# .clasp.json
+
+# ----------------------
+# 4. DATOS Y ARCHIVOS DE OFICINA (Evita subir datos reales)
+# ----------------------
+# Ignoramos excels y csv para asegurar que no se suban bases de datos de clientes
+*.xlsx
+*.xls
+*.csv
+*.ods
+*.pdf
+
+# EXCEPCIÓN: Si tienes plantillas vacías en la carpeta 'docs', descomenta abajo:
+# !docs/templates/*.xlsx
+
+# ----------------------
+# 5. SISTEMA OPERATIVO Y IDEs
+# ----------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# =======================================================
+# Fin del .gitignore
+# =======================================================

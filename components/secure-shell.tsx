@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Building2, Database, Download, GitMerge, LayoutDashboard, Route as RouteIcon, Shield } from "lucide-react";
+import { AccessPendingCard } from "@/components/access-pending-card";
 import { SignOutButton } from "@/components/auth-button";
-import { requireUser } from "@/lib/guards";
+import { requireOperationalUser } from "@/lib/guards";
 
 const nav = [
   { href: "/", label: "Resumen", icon: LayoutDashboard },
@@ -23,7 +24,15 @@ export async function SecureShell({
   eyebrow: string;
   children: React.ReactNode;
 }) {
-  const auth = await requireUser();
+  const auth = await requireOperationalUser();
+
+  if (auth.pendingAccess) {
+    return (
+      <main className="grain flex min-h-screen items-center justify-center px-6 py-12">
+        <AccessPendingCard email={auth.user.email ?? ""} />
+      </main>
+    );
+  }
 
   return (
     <div className="grain min-h-screen">

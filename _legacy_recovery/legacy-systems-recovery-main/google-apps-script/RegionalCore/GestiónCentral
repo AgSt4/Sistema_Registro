@@ -1,0 +1,104 @@
+/* ============================================================
+   1. MAPA DE IDENTIDAD (El cerebro sabe quién es quién)
+   ============================================================ */
+
+const ID_REGISTRO_CENTRAL = '1uPMMLlhEhlr57cKkeezvK3KfhCmUCrZ7druHUm8IT2A'; 
+
+function getDireccionCodigo() {
+  try {
+    // 1. Obtengo mi propio ID (Soy la satélite actual)
+    const miID = SpreadsheetApp.getActive().getId();
+    
+    // 2. Me conecto remotamente al Central
+    const ssCentral = SpreadsheetApp.openById(ID_REGISTRO_CENTRAL);
+    const sheetConfig = ssCentral.getSheetByName('CONFIG_SEDES'); // Asegúrate que el nombre sea exacto
+    
+    // 3. Leo la tabla maestra
+    // La imagen muestra encabezados en fila 1, datos desde fila 2
+    const data = sheetConfig.getDataRange().getValues();
+    
+    // 4. Me busco a mí mismo en la lista
+    // Empezamos i=1 para saltar la fila de encabezados (SEDE, NOMBRE_FUENTE...)
+    for (let i = 1; i < data.length; i++) {
+      
+      // Columna C (Índice 2) es el ID_SPREADSHEET en tu imagen
+      const idEnLista = String(data[i][2]).trim(); 
+      
+      if (idEnLista === miID) {
+        // ¡Me encontré! 
+        // Retorno Columna A (Índice 0) que es 'SEDE' (ej: STGO, IPBB)
+        return String(data[i][0]).trim(); 
+      }
+    }
+    
+    // Si termino el bucle y no me encontré:
+    console.error("⛔ Error Crítico: Este archivo (ID: " + miID + ") no está registrado en la hoja CONFIG_SEDES del Central.");
+    return null;
+
+  } catch (e) {
+    console.error("❌ Error de Conexión con Central: " + e.message);
+    return null; 
+  }
+}
+
+/* ============================================================
+   2. INSTALADOR DE VIGILANCIA (Ejecutar SOLO 1 vez manualmente)
+   ============================================================ */
+function actualizarVigilanciaDinamica() {
+  // 🔴 CONFIGURACIÓN OBLIGATORIA (Script Standalone)
+  // Pega aquí el ID del "Registro Central" (el archivo que contiene CONFIG_SEDES)
+  const ID_REGISTRO_CENTRAL = '1uPMMLlhEhlr57cKkeezvK3KfhCmUCrZ7druHUm8IT2A'; 
+
+  // 1. CONEXIÓN EXPLÍCITA
+  let ss;
+  try {
+    ss = SpreadsheetApp.openById(ID_REGISTRO_CENTRAL);
+  } catch (e) {
+    console.error("⛔ ERROR: No se puede abrir la planilla Central. Verifica que el ID sea correcto.");
+    return;
+  }
+
+  const sheet = ss.getSheetByName('CONFIG_SEDES');
+  if (!sheet) {
+    console.error("⛔ ERROR: No existe la hoja 'CONFIG_SEDES' en el archivo indicado.");
+    return;
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const funcionHandler = 'procesarEdicionRegional'; 
+
+  // 2. LIMPIEZA: Borrar triggers antiguos
+  const triggers = ScriptApp.getProjectTriggers();
+  let borrados = 0;
+  triggers.forEach(t => {
+    if (t.getHandlerFunction() === funcionHandler) {
+      ScriptApp.deleteTrigger(t);
+      borrados++;
+    }
+  });
+  console.log(`🧹 Limpieza: ${borrados} triggers antiguos eliminados.`);
+
+  // 3. INSTALACIÓN
+  let instalados = 0;
+  // i=1 para saltar encabezados
+  for (let i = 1; i < data.length; i++) {
+    // Según tu imagen: Col A=0 (Sede), C=2 (ID), D=3 (Estado)
+    const idHoja = String(data[i][2]).trim(); 
+    const estado = String(data[i][3]).toUpperCase().trim();
+    const nombre = data[i][0]; // Usamos la Sigla (Col A) para el log
+
+    if (estado === 'ACTIVO' && idHoja.length > 10) {
+      try {
+        ScriptApp.newTrigger(funcionHandler)
+          .forSpreadsheet(SpreadsheetApp.openById(idHoja)) // Abre la Satélite remota
+          .onEdit()
+          .create();
+        instalados++;
+        console.log(`✅ Vigilando: ${nombre}`);
+      } catch (e) {
+        console.error(`❌ Error conectando a ${nombre}: ${e.message}`);
+      }
+    }
+  }
+  console.log(`🏁 Resumen: ${instalados} sedes conectadas exitosamente.`);
+}

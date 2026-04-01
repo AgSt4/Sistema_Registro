@@ -38,9 +38,15 @@ export const getAuthState = cache(async () => {
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: memberships } = await supabase
+    .from("area_memberships")
+    .select("id, area, role, region_label, can_export")
+    .eq("profile_id", user.id);
+
   return {
     isConfigured: true,
     user,
-    profile: profile ?? null
+    profile: profile ?? null,
+    memberships: memberships ?? []
   };
 });

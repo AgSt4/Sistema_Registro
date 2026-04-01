@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-cream text-ink font-body antialiased;
+}
+
+a {
+  @apply transition-colors;
+}
+
+::selection {
+  background: rgba(180, 92, 16, 0.18);
+}

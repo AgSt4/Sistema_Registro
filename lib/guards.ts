@@ -10,3 +10,19 @@ export async function requireUser() {
 
   return auth;
 }
+
+export async function requireOperationalUser() {
+  const auth = await requireUser();
+
+  if (!auth.profile) {
+    return {
+      ...auth,
+      pendingAccess: true
+    };
+  }
+
+  return {
+    ...auth,
+    pendingAccess: false
+  };
+}
