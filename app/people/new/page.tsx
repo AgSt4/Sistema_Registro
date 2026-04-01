@@ -10,6 +10,10 @@ export default function NewPersonPage() {
     "use server";
     const supabase = await createClient();
 
+    if (!supabase) {
+      throw new Error("No se pudo inicializar la conexión con Supabase.");
+    }
+
     // 1. Recolectamos lo que el usuario escribió en el formulario
     const rawData = {
       full_name: formData.get("full_name") as string,
