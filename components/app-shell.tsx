@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { Building2, Database, Download, LayoutDashboard, Route as RouteIcon, Shield } from "lucide-react";
+import { Building2, Database, Download, LayoutDashboard, Route as RouteIcon, Shield, GitMerge } from "lucide-react";
 import { SignInButton, SignOutButton } from "@/components/auth-button";
 import { getAuthState } from "@/lib/auth";
 
@@ -10,6 +10,7 @@ const nav = [
   { href: "/formation", label: "Formación", icon: RouteIcon },
   { href: "/activities", label: "Actividades", icon: Database },
   { href: "/imports", label: "Cargas y Excel", icon: Download },
+  { href: "/dedupe", label: "Deduplicación", icon: GitMerge },
   { href: "/settings", label: "Gobernanza", icon: Shield }
 ] satisfies Array<{ href: Route; label: string; icon: React.ComponentType<{ className?: string }> }>;
 

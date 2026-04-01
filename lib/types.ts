@@ -20,6 +20,7 @@ export type FunnelStage =
 export type Person = {
   id: string;
   fullName: string;
+  rut?: string;
   email: string;
   phone: string;
   area: AreaSlug;
@@ -93,6 +94,27 @@ export type DashboardMetric = {
   detail: string;
 };
 
+export type DedupeSignalType = "RUT" | "EMAIL" | "PHONE" | "NAME";
+
+export type DedupeStatus =
+  | "PENDING_REVIEW"
+  | "AUTO_MERGED"
+  | "CONFIRMED_MERGE"
+  | "REJECTED";
+
+export type DedupeCase = {
+  id: string;
+  status: DedupeStatus;
+  confidence: number;
+  primaryPersonId: string;
+  primaryName: string;
+  candidatePersonId: string;
+  candidateName: string;
+  matchedSignals: DedupeSignalType[];
+  summary: string;
+  createdAt: string;
+};
+
 export type Snapshot = {
   metrics: DashboardMetric[];
   people: Person[];
@@ -101,4 +123,5 @@ export type Snapshot = {
   routeBoard: RouteBoardCard[];
   donations: Donation[];
   opportunities: Opportunity[];
+  dedupeCases: DedupeCase[];
 };

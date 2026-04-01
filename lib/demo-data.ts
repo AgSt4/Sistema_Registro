@@ -157,5 +157,31 @@ export const demoSnapshot: Snapshot = {
   opportunities: [
     { id: "o-1", title: "Fondo de intercambio regional", area: "INTERNACIONAL", owner: "Josefina Müller", status: "POSTULACION", closeDate: "2026-04-25" },
     { id: "o-2", title: "Convenio seminarios académicos", area: "ESTUDIOS", owner: "Nicolás Saavedra", status: "SCOUTING", closeDate: "2026-05-12" }
+  ],
+  dedupeCases: [
+    {
+      id: "dc-1",
+      status: "PENDING_REVIEW",
+      confidence: 0.94,
+      primaryPersonId: "p-2",
+      primaryName: "Tomás Fuentes",
+      candidatePersonId: "p-8",
+      candidateName: "Tomás Fuentes",
+      matchedSignals: ["PHONE", "NAME"],
+      summary: "Coincide teléfono normalizado y nombre completo. Falta confirmar si el correo antiguo pertenece a la misma persona.",
+      createdAt: "2026-03-31T10:30:00Z"
+    },
+    {
+      id: "dc-2",
+      status: "AUTO_MERGED",
+      confidence: 1,
+      primaryPersonId: "p-4",
+      primaryName: "Nicolás Saavedra",
+      candidatePersonId: "p-9",
+      candidateName: "Nicolás Saavedra",
+      matchedSignals: ["EMAIL"],
+      summary: "Se fusionó automáticamente por email normalizado idéntico. Queda disponible para auditoría.",
+      createdAt: "2026-03-29T15:05:00Z"
+    }
   ]
 };

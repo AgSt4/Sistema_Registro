@@ -2,6 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getSupabasePublishableKey, getSupabaseUrl, hasSupabaseEnv } from "@/lib/env";
 
+type CookieMutation = {
+  name: string;
+  value: string;
+  options?: Parameters<Awaited<ReturnType<typeof cookies>>["set"]>[2];
+};
+
 export async function createClient() {
   if (!hasSupabaseEnv()) {
     return null;
@@ -20,7 +26,7 @@ export async function createClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: CookieMutation[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);

@@ -5,6 +5,8 @@ create type public.area_slug as enum ('COMUNICACIONES', 'DESARROLLO', 'ESTUDIOS'
 create type public.funnel_stage as enum ('CAPTACION', 'CONTACTO_ACTIVO', 'EN_RUTA', 'EGRESADO', 'VOLUNTARIO', 'DONANTE', 'DATO_DORMIDO');
 create type public.opportunity_status as enum ('SCOUTING', 'POSTULACION', 'SEGUIMIENTO');
 create type public.donation_status as enum ('COMPROMETIDA', 'PAGADA', 'POR_GESTIONAR');
+create type public.identity_signal_type as enum ('RUT', 'EMAIL', 'PHONE', 'NAME');
+create type public.dedupe_case_status as enum ('PENDING_REVIEW', 'AUTO_MERGED', 'CONFIRMED_MERGE', 'REJECTED');
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
@@ -27,8 +29,14 @@ create table if not exists public.area_memberships (
 create table if not exists public.people (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
+  canonical_person_id uuid references public.people (id),
+  rut text,
+  normalized_rut text,
   email text unique,
+  normalized_email text,
   phone text,
+  normalized_phone text,
+  normalized_full_name text,
   area public.area_slug not null,
   region_label text,
   institution_name text,
@@ -37,6 +45,43 @@ create table if not exists public.people (
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+create table if not exists public.person_identity_signals (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people (id) on delete cascade,
+  signal_type public.identity_signal_type not null,
+  raw_value text,
+  normalized_value text not null,
+  is_primary boolean not null default false,
+  confidence numeric(4, 2) not null default 1.0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.dedupe_cases (
+  id uuid primary key default gen_random_uuid(),
+  primary_person_id uuid not null references public.people (id) on delete cascade,
+  candidate_person_id uuid not null references public.people (id) on delete cascade,
+  status public.dedupe_case_status not null default 'PENDING_REVIEW',
+  confidence numeric(4, 2) not null default 0.50,
+  matched_signal_types public.identity_signal_type[] not null default '{}',
+  summary text,
+  auto_merged boolean not null default false,
+  resolved_by uuid references public.profiles (id),
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (primary_person_id, candidate_person_id)
+);
+
+create table if not exists public.person_merge_history (
+  id uuid primary key default gen_random_uuid(),
+  canonical_person_id uuid not null references public.people (id) on delete cascade,
+  merged_person_id uuid not null references public.people (id) on delete cascade,
+  dedupe_case_id uuid references public.dedupe_cases (id),
+  merged_by uuid references public.profiles (id),
+  merge_reason text,
+  created_at timestamptz not null default now(),
+  unique (canonical_person_id, merged_person_id)
 );
 
 create table if not exists public.person_tags (
@@ -142,11 +187,22 @@ create table if not exists public.funding_opportunities (
 
 create unique index if not exists area_memberships_unique_scope
 on public.area_memberships (profile_id, area, coalesce(region_label, ''));
+create unique index if not exists people_normalized_rut_unique
+on public.people (normalized_rut)
+where normalized_rut is not null and normalized_rut <> '';
+create index if not exists people_normalized_email_idx on public.people (normalized_email);
+create index if not exists people_normalized_phone_idx on public.people (normalized_phone);
+create index if not exists people_normalized_full_name_idx on public.people (normalized_full_name);
+create index if not exists person_identity_signals_lookup_idx
+on public.person_identity_signals (signal_type, normalized_value);
 
 alter table public.profiles enable row level security;
 alter table public.area_memberships enable row level security;
 alter table public.people enable row level security;
 alter table public.person_tags enable row level security;
+alter table public.person_identity_signals enable row level security;
+alter table public.dedupe_cases enable row level security;
+alter table public.person_merge_history enable row level security;
 alter table public.formation_routes enable row level security;
 alter table public.route_milestones enable row level security;
 alter table public.person_route_assignments enable row level security;
@@ -200,6 +256,112 @@ begin
 end;
 $$;
 
+create or replace function public.normalize_email(input text)
+returns text
+language sql
+immutable
+as $$
+  select nullif(lower(trim(coalesce(input, ''))), '');
+$$;
+
+create or replace function public.normalize_phone(input text)
+returns text
+language sql
+immutable
+as $$
+  select nullif(
+    case
+      when regexp_replace(coalesce(input, ''), '\D', '', 'g') = '' then ''
+      when regexp_replace(coalesce(input, ''), '\D', '', 'g') like '56%' then regexp_replace(coalesce(input, ''), '\D', '', 'g')
+      when char_length(regexp_replace(coalesce(input, ''), '\D', '', 'g')) = 9 then '56' || regexp_replace(coalesce(input, ''), '\D', '', 'g')
+      else regexp_replace(coalesce(input, ''), '\D', '', 'g')
+    end,
+    ''
+  );
+$$;
+
+create or replace function public.normalize_rut(input text)
+returns text
+language sql
+immutable
+as $$
+  select
+    case
+      when cleaned = '' then null
+      when char_length(cleaned) = 1 then cleaned
+      else left(cleaned, char_length(cleaned) - 1) || '-' || right(cleaned, 1)
+    end
+  from (
+    select upper(regexp_replace(coalesce(input, ''), '[^0-9kK]', '', 'g')) as cleaned
+  ) s;
+$$;
+
+create or replace function public.normalize_name(input text)
+returns text
+language sql
+immutable
+as $$
+  select nullif(lower(trim(regexp_replace(translate(coalesce(input, ''), 'ÁÉÍÓÚáéíóúÄËÏÖÜäëïöüÑñ', 'AEIOUaeiouAEIOUaeiouNn'), '\s+', ' ', 'g'))), '');
+$$;
+
+create or replace function public.sync_person_normalized_fields()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.canonical_person_id := coalesce(new.canonical_person_id, new.id);
+  new.normalized_rut := public.normalize_rut(new.rut);
+  new.normalized_email := public.normalize_email(new.email);
+  new.normalized_phone := public.normalize_phone(new.phone);
+  new.normalized_full_name := public.normalize_name(new.full_name);
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_person_normalized_fields on public.people;
+create trigger sync_person_normalized_fields
+  before insert or update on public.people
+  for each row execute procedure public.sync_person_normalized_fields();
+
+create or replace function public.upsert_person_identity_signals()
+returns trigger
+language plpgsql
+as $$
+begin
+  delete from public.person_identity_signals
+  where person_id = new.id
+    and signal_type in ('RUT', 'EMAIL', 'PHONE', 'NAME');
+
+  if new.normalized_rut is not null then
+    insert into public.person_identity_signals (person_id, signal_type, raw_value, normalized_value, is_primary)
+    values (new.id, 'RUT', new.rut, new.normalized_rut, true);
+  end if;
+
+  if new.normalized_email is not null then
+    insert into public.person_identity_signals (person_id, signal_type, raw_value, normalized_value, is_primary)
+    values (new.id, 'EMAIL', new.email, new.normalized_email, true);
+  end if;
+
+  if new.normalized_phone is not null then
+    insert into public.person_identity_signals (person_id, signal_type, raw_value, normalized_value, is_primary)
+    values (new.id, 'PHONE', new.phone, new.normalized_phone, true);
+  end if;
+
+  if new.normalized_full_name is not null then
+    insert into public.person_identity_signals (person_id, signal_type, raw_value, normalized_value, is_primary, confidence)
+    values (new.id, 'NAME', new.full_name, new.normalized_full_name, true, 0.7);
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists upsert_person_identity_signals on public.people;
+create trigger upsert_person_identity_signals
+  after insert or update on public.people
+  for each row execute procedure public.upsert_person_identity_signals();
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
@@ -212,6 +374,11 @@ create policy "memberships_self_or_admin" on public.area_memberships for select 
 create policy "memberships_admin_write" on public.area_memberships for all using (public.is_admin()) with check (public.is_admin());
 create policy "people_visible_by_area" on public.people for select using (public.has_area_access(area) or assigned_profile_id = auth.uid());
 create policy "people_editable_by_area" on public.people for all using (public.has_area_access(area) or assigned_profile_id = auth.uid()) with check (public.has_area_access(area) or assigned_profile_id = auth.uid());
+create policy "identity_signals_visible_by_people_scope" on public.person_identity_signals for select using (exists (select 1 from public.people where public.people.id = person_identity_signals.person_id and (public.has_area_access(public.people.area) or public.people.assigned_profile_id = auth.uid())));
+create policy "identity_signals_editable_by_people_scope" on public.person_identity_signals for all using (exists (select 1 from public.people where public.people.id = person_identity_signals.person_id and (public.has_area_access(public.people.area) or public.people.assigned_profile_id = auth.uid()))) with check (exists (select 1 from public.people where public.people.id = person_identity_signals.person_id and (public.has_area_access(public.people.area) or public.people.assigned_profile_id = auth.uid())));
+create policy "dedupe_cases_visible_by_people_scope" on public.dedupe_cases for select using (exists (select 1 from public.people p where p.id = dedupe_cases.primary_person_id and (public.has_area_access(p.area) or p.assigned_profile_id = auth.uid())));
+create policy "dedupe_cases_editable_by_admin_or_area" on public.dedupe_cases for all using (exists (select 1 from public.people p where p.id = dedupe_cases.primary_person_id and (public.has_area_access(p.area) or p.assigned_profile_id = auth.uid()))) with check (exists (select 1 from public.people p where p.id = dedupe_cases.primary_person_id and (public.has_area_access(p.area) or p.assigned_profile_id = auth.uid())));
+create policy "merge_history_visible_by_people_scope" on public.person_merge_history for select using (exists (select 1 from public.people p where p.id = person_merge_history.canonical_person_id and (public.has_area_access(p.area) or p.assigned_profile_id = auth.uid())));
 create policy "routes_visible_to_formation" on public.formation_routes for select using (public.has_area_access('FORMACION'));
 create policy "routes_editable_to_formation" on public.formation_routes for all using (public.has_area_access('FORMACION')) with check (public.has_area_access('FORMACION'));
 create policy "milestones_visible_to_formation" on public.route_milestones for select using (public.has_area_access('FORMACION'));

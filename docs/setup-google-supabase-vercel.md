@@ -117,3 +117,23 @@ Cuando ya tengas la URL final de Vercel:
 - Cliente browser: [lib/supabase/browser.ts](/C:/Users/agu-s/OneDrive/Escritorio/Ideapaís/04_Sistema_Datos/Sistema_Registro/lib/supabase/browser.ts)
 - Middleware de sesion: [middleware.ts](/C:/Users/agu-s/OneDrive/Escritorio/Ideapaís/04_Sistema_Datos/Sistema_Registro/middleware.ts)
 - Lectura de datos reales: [lib/data.ts](/C:/Users/agu-s/OneDrive/Escritorio/Ideapaís/04_Sistema_Datos/Sistema_Registro/lib/data.ts)
+- Deduplicacion y normalizacion: [lib/dedupe.ts](/C:/Users/agu-s/OneDrive/Escritorio/Ideapaís/04_Sistema_Datos/Sistema_Registro/lib/dedupe.ts)
+- Bandeja de revision: [app/dedupe/page.tsx](/C:/Users/agu-s/OneDrive/Escritorio/Ideapaís/04_Sistema_Datos/Sistema_Registro/app/dedupe/page.tsx)
+
+## Nota de deduplicacion
+
+El esquema ya viene preparado para operar identidad canonica y revision humana:
+
+- `people` guarda campos normalizados de `rut`, `email`, `telefono` y `nombre`.
+- `person_identity_signals` deja trazabilidad de cada señal usada para comparar registros.
+- `dedupe_cases` guarda posibles duplicados y merges automaticos auditables.
+- `person_merge_history` deja historial de fusiones bajo un ID canonico.
+
+La cascada pensada es:
+
+1. `RUT`
+2. `email`
+3. `telefono`
+4. `nombre + apellido`
+
+Los tres primeros pueden disparar auto-merge auditable. El cuarto debe ir por defecto a revision humana.

@@ -1,4 +1,5 @@
 import { demoSnapshot } from "@/lib/demo-data";
+import { inferDedupeCasesFromPeople } from "@/lib/dedupe";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { Snapshot } from "@/lib/types";
@@ -13,6 +14,7 @@ type ProfileRow = {
 type PersonRow = {
   id: string;
   full_name: string;
+  rut: string | null;
   email: string | null;
   phone: string | null;
   area: Snapshot["people"][number]["area"];
@@ -85,6 +87,17 @@ type OpportunityRow = {
   closes_on: string | null;
 };
 
+type DedupeCaseRow = {
+  id: string;
+  primary_person_id: string;
+  candidate_person_id: string;
+  status: Snapshot["dedupeCases"][number]["status"];
+  confidence: number;
+  matched_signal_types: Snapshot["dedupeCases"][number]["matchedSignals"] | null;
+  summary: string | null;
+  created_at: string;
+};
+
 export async function getSnapshot(): Promise<Snapshot> {
   if (!hasSupabaseEnv()) {
     return demoSnapshot;
@@ -103,10 +116,10 @@ export async function getSnapshot(): Promise<Snapshot> {
     return demoSnapshot;
   }
 
-  const [profilesRes, peopleRes, routesRes, milestonesRes, assignmentsRes, activitiesRes, activityLinksRes, attendanceRes, donationsRes, opportunitiesRes] =
+  const [profilesRes, peopleRes, routesRes, milestonesRes, assignmentsRes, activitiesRes, activityLinksRes, attendanceRes, donationsRes, opportunitiesRes, dedupeCasesRes] =
     await Promise.all([
       supabase.from("profiles").select("id, full_name, email, default_role"),
-      supabase.from("people").select("id, full_name, email, phone, area, region_label, institution_name, assigned_profile_id, funnel_stage, created_at"),
+      supabase.from("people").select("id, full_name, rut, email, phone, area, region_label, institution_name, assigned_profile_id, funnel_stage, created_at"),
       supabase.from("formation_routes").select("id, name, campus"),
       supabase.from("route_milestones").select("id, route_id, label, description, sort_order").order("sort_order"),
       supabase.from("person_route_assignments").select("person_id, route_id, current_milestone_id"),
@@ -114,7 +127,8 @@ export async function getSnapshot(): Promise<Snapshot> {
       supabase.from("activity_route_links").select("activity_id, route_id, milestone_id"),
       supabase.from("attendance_records").select("activity_id, person_id, attended_sessions, special_approval_passed"),
       supabase.from("donations").select("id, donor_name, amount, donation_date, campaign, status"),
-      supabase.from("funding_opportunities").select("id, title, area, owner_profile_id, status, closes_on")
+      supabase.from("funding_opportunities").select("id, title, area, owner_profile_id, status, closes_on"),
+      supabase.from("dedupe_cases").select("id, primary_person_id, candidate_person_id, status, confidence, matched_signal_types, summary, created_at")
     ]);
 
   const hasError = [
@@ -144,6 +158,7 @@ export async function getSnapshot(): Promise<Snapshot> {
   const attendance = (attendanceRes.data ?? []) as AttendanceRow[];
   const donations = (donationsRes.data ?? []) as DonationRow[];
   const opportunities = (opportunitiesRes.data ?? []) as OpportunityRow[];
+  const dedupeCases = !dedupeCasesRes.error ? ((dedupeCasesRes.data ?? []) as DedupeCaseRow[]) : [];
 
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile.full_name]));
   const personMap = new Map(people.map((person) => [person.id, person]));
@@ -185,6 +200,7 @@ export async function getSnapshot(): Promise<Snapshot> {
     people: people.map((person) => ({
       id: person.id,
       fullName: person.full_name,
+      rut: person.rut ?? undefined,
       email: person.email ?? "",
       phone: person.phone ?? "",
       area: person.area,
@@ -254,6 +270,49 @@ export async function getSnapshot(): Promise<Snapshot> {
       owner: opportunity.owner_profile_id ? profileMap.get(opportunity.owner_profile_id) ?? "Sin responsable" : "Sin responsable",
       status: opportunity.status,
       closeDate: opportunity.closes_on ?? ""
-    }))
+    })),
+    dedupeCases:
+      dedupeCases.length > 0
+        ? dedupeCases
+            .map((dedupeCase) => {
+              const primary = personMap.get(dedupeCase.primary_person_id);
+              const candidate = personMap.get(dedupeCase.candidate_person_id);
+
+              if (!primary || !candidate) {
+                return null;
+              }
+
+              return {
+                id: dedupeCase.id,
+                status: dedupeCase.status,
+                confidence: dedupeCase.confidence,
+                primaryPersonId: dedupeCase.primary_person_id,
+                primaryName: primary.full_name,
+                candidatePersonId: dedupeCase.candidate_person_id,
+                candidateName: candidate.full_name,
+                matchedSignals: dedupeCase.matched_signal_types ?? [],
+                summary: dedupeCase.summary ?? "Caso generado por coincidencias de identidad.",
+                createdAt: dedupeCase.created_at
+              };
+            })
+            .filter((item): item is NonNullable<typeof item> => Boolean(item))
+        : inferDedupeCasesFromPeople(
+            people.map((person) => ({
+              id: person.id,
+              fullName: person.full_name,
+              rut: person.rut ?? undefined,
+              email: person.email ?? "",
+              phone: person.phone ?? "",
+              area: person.area,
+              region: person.region_label ?? "Sin región",
+              roleScope: "USUARIO",
+              funnelStage: person.funnel_stage,
+              tags: [],
+              assignedTo: person.assigned_profile_id ? profileMap.get(person.assigned_profile_id) ?? "Sin responsable" : "Sin responsable",
+              routeId: assignments.find((assignment) => assignment.person_id === person.id)?.route_id,
+              institution: person.institution_name ?? undefined,
+              lastActivityAt: person.created_at
+            }))
+          )
   };
 }
