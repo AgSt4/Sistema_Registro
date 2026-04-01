@@ -1,8 +1,5 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { AppShell } from "@/components/app-shell";
-import { SectionCard } from "@/components/cards";
-import { SignInButton } from "@/components/auth-button";
+﻿import { redirect } from "next/navigation";
+import { EmailPasswordForm } from "@/components/email-password-form";
 import { LoginSessionGate } from "@/components/login-session-gate";
 import { getAuthState } from "@/lib/auth";
 
@@ -24,55 +21,23 @@ export default async function LoginPage() {
           Ingreso seguro al sistema interno.
         </h1>
         <p className="mt-4 text-sm leading-7 text-brand-ink/72">
-          El acceso está restringido a usuarios autorizados mediante Google Workspace y permisos por área.
+          El acceso esta restringido a usuarios autorizados con credenciales internas y permisos por area.
         </p>
         <div className="mt-8 rounded-[28px] border border-brand-ink/10 bg-brand-sand/60 p-6">
           {auth.isConfigured ? (
             <div className="space-y-5">
               <p className="text-sm leading-6 text-brand-ink/75">
-                La autenticación está habilitada. Ingresa con tu cuenta institucional para continuar.
+                La autenticacion esta habilitada. Ingresa con tu correo y contrasena para continuar.
               </p>
-              <SignInButton />
+              <EmailPasswordForm />
             </div>
           ) : (
             <p className="text-sm leading-6 text-brand-ink/75">
-              Faltan variables de Supabase en el proyecto. Configúralas en Vercel antes de habilitar el acceso.
+              Faltan variables de Supabase en el proyecto. Configuralas en Vercel antes de habilitar el acceso.
             </p>
           )}
         </div>
       </section>
     </main>
   );
-
-  return (
-    <AppShell eyebrow="Acceso" title="Ingreso con Google Workspace para operar con permisos por área y rol.">
-      <div className="mx-auto max-w-3xl">
-        <SectionCard
-          title="Entrar al sistema"
-          description="Cuando Supabase está configurado, el login usa Google y la sesión queda disponible en el servidor para SSR y políticas RLS."
-        >
-          <div className="space-y-4 text-sm text-brand-ink/75">
-            <p>
-              Estado de configuración:{" "}
-              <strong>{auth.isConfigured ? "Supabase detectado" : "faltan variables de entorno"}</strong>
-            </p>
-            <p>
-              Estado de sesión: <strong>{auth.user ? `conectado como ${auth.user?.email ?? ""}` : "sin sesión"}</strong>
-            </p>
-            {auth.isConfigured ? <SignInButton /> : null}
-            {!auth.isConfigured ? (
-              <p>
-                Completa primero `.env.local` o las variables del proyecto en Vercel. El detalle quedó documentado en{" "}
-                <Link href="/settings" className="font-semibold text-brand-wine underline underline-offset-4">
-                  Gobernanza
-                </Link>
-                .
-              </p>
-            ) : null}
-          </div>
-        </SectionCard>
-      </div>
-    </AppShell>
-  );
 }
-
