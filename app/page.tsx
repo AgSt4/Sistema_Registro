@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/app-shell";
+import { SecureShell as AppShell } from "@/components/secure-shell";
 import { Badge, MetricCard, SectionCard } from "@/components/cards";
 import { getSnapshot } from "@/lib/data";
 import { formatCurrency } from "@/lib/utils";

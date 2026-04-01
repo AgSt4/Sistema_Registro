@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/app-shell";
+import { SecureShell as AppShell } from "@/components/secure-shell";
 import { Badge, SectionCard } from "@/components/cards";
 import { AttendanceBoard } from "@/components/attendance-board";
 import { getSnapshot } from "@/lib/data";
@@ -15,21 +15,25 @@ export default async function FormationPage() {
 
   return (
     <AppShell eyebrow="Formación" title="Rutas formativas con hitos, seguimiento semestral y operación colaborativa.">
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <SectionCard title={primaryRoute.name} description="Lectura tipo kanban: cada columna representa un hito y permite trabajo distribuido entre encargado y subencargados.">
-          <div className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-8 xl:grid-cols-[1.35fr_0.9fr]">
+        <SectionCard
+          className="p-7 lg:p-8"
+          title={primaryRoute.name}
+          description="Cada columna representa una etapa operativa. La lectura debe permitir ubicar personas, alertas y siguiente acción sin saturar la pantalla."
+        >
+          <div className="grid gap-5 xl:grid-cols-4">
             {primaryRoute.milestones.map((milestone) => (
-              <div key={milestone.id} className="rounded-[28px] border border-brand-ink/10 bg-brand-sand/65 p-4">
-                <p className="font-semibold text-brand-ink">{milestone.label}</p>
-                <p className="mt-1 text-sm text-brand-ink/70">{milestone.description}</p>
-                <div className="mt-4 space-y-3">
+              <div key={milestone.id} className="rounded-[30px] border border-brand-ink/10 bg-brand-sand/65 p-5">
+                <p className="text-lg font-semibold leading-snug text-brand-ink">{milestone.label}</p>
+                <p className="mt-2 text-sm leading-6 text-brand-ink/70">{milestone.description}</p>
+                <div className="mt-5 space-y-4">
                   {snapshot.routeBoard.filter((card) => card.currentMilestoneId === milestone.id).map((card) => (
-                    <div key={card.personId} className="rounded-3xl bg-white p-4 shadow-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-brand-ink">{card.personName}</p>
+                    <div key={card.personId} className="rounded-[24px] bg-white p-4 shadow-sm">
+                      <div className="flex flex-col gap-3">
+                        <p className="text-base font-semibold text-brand-ink">{card.personName}</p>
                         <Badge tone={statusTone[card.status]}>{card.status}</Badge>
                       </div>
-                      <p className="mt-2 text-sm text-brand-ink/70">{card.nextAction}</p>
+                      <p className="mt-3 text-sm leading-6 text-brand-ink/70">{card.nextAction}</p>
                     </div>
                   ))}
                 </div>

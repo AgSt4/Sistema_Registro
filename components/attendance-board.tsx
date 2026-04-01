@@ -13,12 +13,12 @@ export function AttendanceBoard() {
   const [rows, setRows] = useState(initialRows);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {rows.map((row) => {
         const approved = row.attendance >= row.threshold && row.specialApproval;
 
         return (
-          <div key={row.id} className="grid gap-3 rounded-3xl border border-brand-ink/10 bg-brand-sand/60 p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
+          <div key={row.id} className="grid gap-5 rounded-[28px] border border-brand-ink/10 bg-brand-sand/60 p-5 lg:grid-cols-[1.2fr_0.7fr_0.8fr_auto]">
             <div>
               <p className="font-semibold text-brand-ink">{row.name}</p>
               <p className="text-sm text-brand-ink/70">El sistema puede derivar automáticamente el hito cuando cumple asistencia + criterio especial.</p>

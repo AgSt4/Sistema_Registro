@@ -10,10 +10,10 @@ export function MetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[28px] border border-brand-ink/10 bg-white p-5 shadow-card">
+    <div className="rounded-[32px] border border-brand-ink/10 bg-white p-6 shadow-card lg:p-7">
       <p className="text-sm uppercase tracking-[0.22em] text-brand-wine">{label}</p>
-      <p className="mt-3 font-serif text-4xl font-semibold text-brand-ink">{value}</p>
-      <p className="mt-3 text-sm text-brand-ink/70">{detail}</p>
+      <p className="mt-4 font-serif text-4xl font-semibold text-brand-ink">{value}</p>
+      <p className="mt-4 text-sm leading-6 text-brand-ink/70">{detail}</p>
     </div>
   );
 }
@@ -30,10 +30,10 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-[28px] border border-brand-ink/10 bg-white p-5 shadow-card", className)}>
-      <div className="mb-4">
-        <h2 className="font-serif text-2xl font-semibold text-brand-ink">{title}</h2>
-        {description ? <p className="mt-1 text-sm text-brand-ink/70">{description}</p> : null}
+    <section className={cn("rounded-[32px] border border-brand-ink/10 bg-white p-6 shadow-card lg:p-7", className)}>
+      <div className="mb-6">
+        <h2 className="font-serif text-3xl font-semibold leading-tight text-brand-ink">{title}</h2>
+        {description ? <p className="mt-3 text-sm leading-6 text-brand-ink/70">{description}</p> : null}
       </div>
       {children}
     </section>

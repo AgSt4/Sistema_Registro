@@ -1,8 +1,29 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { hasSupabaseEnv } from "@/lib/env";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  return updateSession(request);
+  const response = await updateSession(request);
+  const { pathname } = request.nextUrl;
+  const isPublicRoute = pathname === "/login" || pathname.startsWith("/auth/callback");
+
+  if (!hasSupabaseEnv()) {
+    return isPublicRoute ? response : NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const hasSessionCookies = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.endsWith("-auth-token"));
+
+  if (!isPublicRoute && !hasSessionCookies) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (isPublicRoute && hasSessionCookies && pathname === "/login") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  return response;
 }
 
 export const config = {

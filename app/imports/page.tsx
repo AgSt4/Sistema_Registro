@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/app-shell";
+import { SecureShell as AppShell } from "@/components/secure-shell";
 import { SectionCard } from "@/components/cards";
 import { ExportButtons } from "@/components/export-buttons";
 import { getSnapshot } from "@/lib/data";
