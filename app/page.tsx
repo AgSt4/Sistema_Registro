@@ -14,7 +14,7 @@ export default async function HomePage() {
     );
   }
 
-  // 1. Cálculos reales desde la base de datos
+  // 1. Cálculos reales desde la base de datos [cite: 17]
   const { count: countPeople } = await supabase.from("people").select("*", { count: "exact", head: true });
   const { count: countEnRuta } = await supabase.from("people").select("*", { count: "exact", head: true }).eq("funnel_stage", "EN_RUTA");
   const { count: countAttendance } = await supabase.from("attendance_records").select("*", { count: "exact", head: true });
@@ -22,7 +22,6 @@ export default async function HomePage() {
   const { data: donationsData } = await supabase.from("donations").select("amount");
   const totalDonations = donationsData?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0;
 
-  // Corregimos 'description' por 'detail' para que TypeScript no reclame 
   const metrics = [
     { label: "PERSONAS ACTIVAS", value: String(countPeople || 0), detail: "Registros totales en base." },
     { label: "JÓVENES EN RUTA", value: String(countEnRuta || 0), detail: "Etapa formativa activa." },
@@ -59,22 +58,22 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard title="Lectura ejecutiva" description="Activo de datos común para todas las áreas operativas. [cite: 5, 8]">
+        <SectionCard title="Lectura ejecutiva" description="Activo de datos común para todas las áreas operativas.">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-3xl bg-brand-ink p-5 text-brand-sand">
               <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">Formación</p>
               <p className="mt-3 font-serif text-3xl">Directorio Activo</p>
-              <p className="mt-3 text-sm text-brand-sand/80">Base lista para seguimiento de hitos y rutas formativas. [cite: 8, 11]</p>
+              <p className="mt-3 text-sm text-brand-sand/80">Base lista para seguimiento de hitos y rutas formativas.</p>
             </div>
             <div className="rounded-3xl border border-brand-ink/10 bg-brand-sand p-5">
               <p className="text-sm uppercase tracking-[0.2em] text-brand-wine">Desarrollo y comunicaciones</p>
               <p className="mt-3 text-lg font-semibold text-brand-ink">Consolidación</p>
-              <p className="mt-3 text-sm text-brand-ink/75">Exportaciones limpias para segmentación y fidelización. [cite: 5, 12]</p>
+              <p className="mt-3 text-sm text-brand-ink/75">Exportaciones limpias para segmentación y fidelización.</p>
             </div>
           </div>
         </SectionCard>
 
-        <SectionCard title="Pipeline de activación" description="Últimos registros detectados en el sistema. ">
+        <SectionCard title="Pipeline de activación" description="Últimos registros detectados en el sistema.">
           <div className="space-y-3">
             {!recentPeople || recentPeople.length === 0 ? (
               <p className="text-sm text-brand-ink/60 p-4">Sin personas registradas.</p>
@@ -85,7 +84,7 @@ export default async function HomePage() {
                     <div>
                       <p className="font-semibold text-brand-ink">{person.full_name}</p>
                       <p className="text-sm text-brand-ink/65">
-                        {person.area} · {(person.profiles as any)?.full_name ?? "Sin asignar"}
+                        {person.area} · {(person.profiles as { full_name?: string } | null)?.full_name ?? "Sin asignar"}
                       </p>
                     </div>
                     <Badge tone={person.funnel_stage === "EN_RUTA" ? "success" : "default"}>{person.funnel_stage}</Badge>
@@ -98,7 +97,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <SectionCard title="Donaciones y activación" description="Últimos aportes registrados. ">
+        <SectionCard title="Donaciones y activación" description="Últimos aportes registrados.">
           <div className="space-y-3">
             {!recentDonations || recentDonations.length === 0 ? (
               <p className="text-sm text-brand-ink/60 p-4">Sin donaciones.</p>
@@ -118,7 +117,7 @@ export default async function HomePage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Gobernanza" description="Estado de los módulos operativos. ">
+        <SectionCard title="Gobernanza" description="Estado de los módulos operativos.">
           <div className="grid gap-3 md:grid-cols-2">
             {["Personas", "Ingreso Manual", "Políticas RLS", "Base Transaccional"].map((item) => (
               <div key={item} className="rounded-3xl border border-brand-ink/10 bg-brand-sand/65 p-4 text-sm font-medium text-brand-ink">
