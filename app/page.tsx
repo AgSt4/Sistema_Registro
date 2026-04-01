@@ -14,24 +14,22 @@ export default async function HomePage() {
     );
   }
 
-  // 1. Calculamos las métricas reales directo desde la base de datos
+  // 1. Cálculos reales desde la base de datos
   const { count: countPeople } = await supabase.from("people").select("*", { count: "exact", head: true });
   const { count: countEnRuta } = await supabase.from("people").select("*", { count: "exact", head: true }).eq("funnel_stage", "EN_RUTA");
   const { count: countAttendance } = await supabase.from("attendance_records").select("*", { count: "exact", head: true });
   
-  // Traemos los montos de donaciones y los sumamos
   const { data: donationsData } = await supabase.from("donations").select("amount");
   const totalDonations = donationsData?.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0;
 
-  // Armamos el arreglo para las tarjetas superiores
+  // Corregimos 'description' por 'detail' para que TypeScript no reclame 
   const metrics = [
-    { label: "PERSONAS ACTIVAS", value: String(countPeople || 0), description: "Registros visibles según permisos y asignaciones." },
-    { label: "JÓVENES EN RUTA", value: String(countEnRuta || 0), description: "Asignaciones en etapa formativa." },
-    { label: "ASISTENCIAS", value: String(countAttendance || 0), description: "Registros consolidados en actividades." },
-    { label: "DONACIONES VIGENTES", value: formatCurrency(totalDonations), description: "Suma de donaciones registradas en el sistema." },
+    { label: "PERSONAS ACTIVAS", value: String(countPeople || 0), detail: "Registros totales en base." },
+    { label: "JÓVENES EN RUTA", value: String(countEnRuta || 0), detail: "Etapa formativa activa." },
+    { label: "ASISTENCIAS", value: String(countAttendance || 0), detail: "Registros consolidados." },
+    { label: "DONACIONES VIGENTES", value: formatCurrency(totalDonations), detail: "Suma total registrada." },
   ];
 
-  // 2. Traemos las últimas 4 personas reales para el pipeline
   const { data: recentPeople } = await supabase
     .from("people")
     .select(`
@@ -45,7 +43,6 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(4);
 
-  // 3. Traemos las últimas 4 donaciones reales
   const { data: recentDonations } = await supabase
     .from("donations")
     .select("id, donor_name, campaign, amount, status")
@@ -55,36 +52,32 @@ export default async function HomePage() {
   return (
     <AppShell eyebrow="Centro Operativo" title="Una sola capa de operación para personas, formación, donaciones y activación institucional.">
       
-      {/* TARJETAS DE MÉTRICAS */}
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} />
+          <MetricCard key={metric.label} label={metric.label} value={metric.value} detail={metric.detail} />
         ))}
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        
-        {/* LECTURA EJECUTIVA (Textos limpiados) */}
-        <SectionCard title="Lectura ejecutiva" description="Base inicial pensada para que cada área vea sólo su parcela, pero opere sobre un activo de datos común.">
+        <SectionCard title="Lectura ejecutiva" description="Activo de datos común para todas las áreas operativas. [cite: 5, 8]">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-3xl bg-brand-ink p-5 text-brand-sand">
               <p className="text-sm uppercase tracking-[0.2em] text-brand-gold">Formación</p>
               <p className="mt-3 font-serif text-3xl">Directorio Activo</p>
-              <p className="mt-3 text-sm text-brand-sand/80">La base de datos está lista para recibir ingresos de jóvenes, asignar hitos y registrar asistencias.</p>
+              <p className="mt-3 text-sm text-brand-sand/80">Base lista para seguimiento de hitos y rutas formativas. [cite: 8, 11]</p>
             </div>
             <div className="rounded-3xl border border-brand-ink/10 bg-brand-sand p-5">
               <p className="text-sm uppercase tracking-[0.2em] text-brand-wine">Desarrollo y comunicaciones</p>
-              <p className="mt-3 text-lg font-semibold text-brand-ink">Consolidación de datos</p>
-              <p className="mt-3 text-sm text-brand-ink/75">Permite exportaciones limpias para segmentación externa y validación de donaciones.</p>
+              <p className="mt-3 text-lg font-semibold text-brand-ink">Consolidación</p>
+              <p className="mt-3 text-sm text-brand-ink/75">Exportaciones limpias para segmentación y fidelización. [cite: 5, 12]</p>
             </div>
           </div>
         </SectionCard>
 
-        {/* PIPELINE DE ACTIVACIÓN VIVO */}
-        <SectionCard title="Pipeline de activación" description="Últimas personas ingresadas o modificadas en el sistema.">
+        <SectionCard title="Pipeline de activación" description="Últimos registros detectados en el sistema. ">
           <div className="space-y-3">
             {!recentPeople || recentPeople.length === 0 ? (
-              <p className="text-sm text-brand-ink/60 p-4">Aún no hay personas registradas.</p>
+              <p className="text-sm text-brand-ink/60 p-4">Sin personas registradas.</p>
             ) : (
               recentPeople.map((person) => (
                 <div key={person.id} className="rounded-3xl border border-brand-ink/10 bg-white p-4">
@@ -92,7 +85,7 @@ export default async function HomePage() {
                     <div>
                       <p className="font-semibold text-brand-ink">{person.full_name}</p>
                       <p className="text-sm text-brand-ink/65">
-                        {person.area} {person.region_label ? `· ${person.region_label}` : ""} · Resp: {(person.profiles as { full_name?: string } | null)?.full_name ?? "Sin asignar"}
+                        {person.area} · {(person.profiles as any)?.full_name ?? "Sin asignar"}
                       </p>
                     </div>
                     <Badge tone={person.funnel_stage === "EN_RUTA" ? "success" : "default"}>{person.funnel_stage}</Badge>
@@ -105,26 +98,19 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        
-        {/* DONACIONES VIVAS */}
-        <SectionCard title="Donaciones y activación" description="Vista resumida de los últimos aportes en el directorio de desarrollo.">
+        <SectionCard title="Donaciones y activación" description="Últimos aportes registrados. ">
           <div className="space-y-3">
             {!recentDonations || recentDonations.length === 0 ? (
-              <p className="text-sm text-brand-ink/60 p-4">Aún no hay donaciones registradas.</p>
+              <p className="text-sm text-brand-ink/60 p-4">Sin donaciones.</p>
             ) : (
               recentDonations.map((donation) => (
                 <div key={donation.id} className="rounded-3xl border border-brand-ink/10 bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-brand-ink">{donation.donor_name}</p>
-                      <p className="text-sm text-brand-ink/65">{donation.campaign || "Sin campaña registrada"}</p>
+                      <p className="text-sm text-brand-ink/65">{donation.campaign || "General"}</p>
                     </div>
                     <p className="font-serif text-2xl text-brand-ink">{formatCurrency(Number(donation.amount))}</p>
-                  </div>
-                  <div className="mt-3">
-                    <Badge tone={donation.status === "PAGADA" ? "success" : donation.status === "COMPROMETIDA" ? "warning" : "danger"}>
-                      {donation.status}
-                    </Badge>
                   </div>
                 </div>
               ))
@@ -132,9 +118,9 @@ export default async function HomePage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Módulos operacionales" description="Funciones listas en tu base de datos y despliegue actual.">
+        <SectionCard title="Gobernanza" description="Estado de los módulos operativos. ">
           <div className="grid gap-3 md:grid-cols-2">
-            {["Personas y hoja de vida", "Ingreso operativo manual", "Políticas RLS activas", "Base transaccional lista"].map((item) => (
+            {["Personas", "Ingreso Manual", "Políticas RLS", "Base Transaccional"].map((item) => (
               <div key={item} className="rounded-3xl border border-brand-ink/10 bg-brand-sand/65 p-4 text-sm font-medium text-brand-ink">
                 {item}
               </div>
