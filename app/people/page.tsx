@@ -2,6 +2,7 @@ import { SecureShell as AppShell } from "@/components/secure-shell";
 import { Badge, SectionCard } from "@/components/cards";
 // 1. Importamos el cliente real de Supabase en lugar del 'mock' de datos
 import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
 
 export default async function PeoplePage() {
   // 2. Iniciamos la conexión segura usando la sesión del usuario actual
@@ -33,6 +34,15 @@ export default async function PeoplePage() {
   return (
     <AppShell eyebrow="CRM" title="Directorio central de personas, instituciones y responsables operativos.">
       <SectionCard title="Personas" description="Base operativa. Los registros visibles dependen de tu área y rol.">
+        
+        {/* --- ESTE ES EL BOTÓN NUEVO QUE AGREGAMOS --- */}
+        <div className="mb-4 flex justify-end">
+          <Link href="/people/new" className="bg-brand-ink text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-black transition-colors">
+            + Nueva Persona
+          </Link>
+        </div>
+        {/* -------------------------------------------- */}
+
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-brand-ink/65">
@@ -67,7 +77,6 @@ export default async function PeoplePage() {
                       </Badge>
                     </td>
                     <td className="px-3 py-4">
-                      {/* Supabase devuelve el objeto anidado al hacer el join */}
                       {person.profiles?.full_name ?? "Sin asignar"}
                     </td>
                     <td className="px-3 py-4">{person.institution_name ?? "-"}</td>
