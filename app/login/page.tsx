@@ -6,7 +6,9 @@ import { SignInButton } from "@/components/auth-button";
 import { getAuthState } from "@/lib/auth";
 
 export default async function LoginPage() {
-  const auth = await getAuthState();
+  const auth = (await getAuthState()) as
+    | { isConfigured: boolean; user: { email?: string | null }; profile: unknown }
+    | { isConfigured: boolean; user: null; profile: unknown };
 
   if (auth.user) {
     redirect("/");

@@ -20,7 +20,7 @@ export function AttendanceBoard() {
         return (
           <div key={row.id} className="grid gap-5 rounded-[28px] border border-brand-ink/10 bg-brand-sand/60 p-5 lg:grid-cols-[1.2fr_0.7fr_0.8fr_auto]">
             <div>
-              <p className="font-semibold text-brand-ink">{row.name}</p>
+              <p className="text-lg font-semibold text-brand-ink">{row.name}</p>
               <p className="text-sm text-brand-ink/70">El sistema puede derivar automáticamente el hito cuando cumple asistencia + criterio especial.</p>
             </div>
             <label className="text-sm text-brand-ink/70">

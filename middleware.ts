@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
 
   const hasSessionCookies = request.cookies
     .getAll()
-    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.endsWith("-auth-token"));
+    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
 
   if (!isPublicRoute && !hasSessionCookies) {
     return NextResponse.redirect(new URL("/login", request.url));

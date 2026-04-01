@@ -4,6 +4,22 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/env";
 import { Snapshot } from "@/lib/types";
 
+const emptySnapshot: Snapshot = {
+  metrics: [
+    { label: "Personas activas", value: "0", detail: "Sin registros visibles para este usuario." },
+    { label: "Jóvenes en ruta", value: "0", detail: "Sin asignaciones visibles en rutas formativas." },
+    { label: "Asistencias del semestre", value: "0", detail: "Sin asistencias visibles." },
+    { label: "Donaciones vigentes", value: "$0", detail: "Sin donaciones visibles." }
+  ],
+  people: [],
+  activities: [],
+  routes: [],
+  routeBoard: [],
+  donations: [],
+  opportunities: [],
+  dedupeCases: []
+};
+
 type ProfileRow = {
   id: string;
   full_name: string;
@@ -113,7 +129,7 @@ export async function getSnapshot(): Promise<Snapshot> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return demoSnapshot;
+    return emptySnapshot;
   }
 
   const [profilesRes, peopleRes, routesRes, milestonesRes, assignmentsRes, activitiesRes, activityLinksRes, attendanceRes, donationsRes, opportunitiesRes, dedupeCasesRes] =
@@ -145,7 +161,7 @@ export async function getSnapshot(): Promise<Snapshot> {
   ].some(Boolean);
 
   if (hasError) {
-    return demoSnapshot;
+    return emptySnapshot;
   }
 
   const profiles = (profilesRes.data ?? []) as ProfileRow[];

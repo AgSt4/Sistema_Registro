@@ -18,11 +18,12 @@ export default async function FormationPage() {
       <section className="grid gap-8 xl:grid-cols-[1.35fr_0.9fr]">
         <SectionCard
           className="p-7 lg:p-8"
-          title={primaryRoute.name}
+          title={primaryRoute?.name ?? "Sin rutas cargadas"}
           description="Cada columna representa una etapa operativa. La lectura debe permitir ubicar personas, alertas y siguiente acción sin saturar la pantalla."
         >
-          <div className="grid gap-5 xl:grid-cols-4">
-            {primaryRoute.milestones.map((milestone) => (
+          {primaryRoute ? (
+            <div className="grid gap-5 xl:grid-cols-4">
+              {primaryRoute.milestones.map((milestone) => (
               <div key={milestone.id} className="rounded-[30px] border border-brand-ink/10 bg-brand-sand/65 p-5">
                 <p className="text-lg font-semibold leading-snug text-brand-ink">{milestone.label}</p>
                 <p className="mt-2 text-sm leading-6 text-brand-ink/70">{milestone.description}</p>
@@ -38,8 +39,13 @@ export default async function FormationPage() {
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm leading-6 text-brand-ink/70">
+              Cuando conectes las rutas formativas en Supabase, aquí aparecerá el tablero por hitos.
+            </p>
+          )}
         </SectionCard>
 
         <SectionCard title="Lógica de aprobación" description="Ejemplo visual para la carga bonita de asistencias y validación de requisitos.">
